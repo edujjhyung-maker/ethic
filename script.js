@@ -1,3 +1,8 @@
+/* ==================================================
+   공짜로 다 준다고요? — 개인정보 여정
+   게임 로직 + 효과음(Web Audio) + 애니메이션
+   ================================================== */
+
 /* ---------------- DATA ---------------- */
 const SCENARIOS = [
   {
@@ -49,19 +54,19 @@ const SCENARIOS = [
 
 const ENDINGS = [
   {
-    min:0, max:4,
+    min:0, max:4, mood:"good",
     name:"현명한 디지털 시민",
     img:"images/15 ending1.png",
     desc:"편리함은 조금 적었지만, 내 정보는 거의 새어나가지 않았어요. 뉴스 속 피해자 명단에 내 이름은 없습니다. 무엇을 내어줄지 스스로 판단한 당신은, 이미 현명한 디지털 시민이에요."
   },
   {
-    min:5, max:9,
+    min:5, max:9, mood:"mid",
     name:"아슬아슬했던 사용자",
     img:"images/16 ending2.png",
     desc:"편리하게 잘 썼지만, 전화번호와 위치 기록이 광고업체로 넘어가 스팸과 표적 광고가 쏟아집니다. 큰 피해는 면했지만 찜찜한 결말이에요. 다음엔 ‘이 정보를 꼭 줘야 할까?’ 한 번만 더 멈춰볼까요?"
   },
   {
-    min:10, max:99,
+    min:10, max:99, mood:"bad",
     name:"편리함의 대가",
     img:"images/17 ending3.png",
     desc:"가장 화려하게 즐겼지만, 사진·연락처·위치, 친구들 정보까지 모두 팔렸어요. 사칭 계정과 딥페이크 도용까지 등장합니다. 그 많던 ✨편리함은, 사실 내 정보의 가격이었던 거예요. 한 번 넘긴 정보는 되돌리기 어렵다는 걸 기억해요."
@@ -69,51 +74,93 @@ const ENDINGS = [
 ];
 
 /* ---------------- STATE ---------------- */
-let idx = 0;
-let conv = 0;
-let exp = 0;
-let log = []; // {scenario, choiceText, c, e}
+let idx = 0, conv = 0, exp = 0, log = [];
+
+/* ================= SOUND ENGINE ================= */
+const Sound = (()=>{
+  let ctx=null, muted=false;
+  function ac(){ if(!ctx){ try{ ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return ctx; }
+  function tone(freq, dur, type="sine", gain=0.18, delay=0){
+    if(muted) return;
+    const c=ac(); if(!c) return;
+    const t0=c.currentTime+delay;
+    const o=c.createOscillator(), g=c.createGain();
+    o.type=type; o.frequency.setValueAtTime(freq,t0);
+    g.gain.setValueAtTime(0,t0);
+    g.gain.linearRampToValueAtTime(gain,t0+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0+dur+0.02);
+  }
+  function arp(base, steps, type="triangle", gain=0.16, gap=0.08){
+    steps.forEach((s,i)=> tone(base*Math.pow(2,s/12), 0.22, type, gain, i*gap));
+  }
+  return {
+    resume(){ const c=ac(); if(c && c.state==="suspended") c.resume(); },
+    setMuted(m){ muted=m; },
+    isMuted(){ return muted; },
+    click(){ tone(420,0.08,"square",0.10); },
+    select(){ tone(523,0.10,"triangle",0.14); tone(784,0.12,"triangle",0.10,0.06); },
+    reward(level){
+      if(level<=0){ arp(392,[0,4],"sine",0.14,0.09); }
+      else if(level===1){ arp(440,[0,4,7],"triangle",0.15,0.08); }
+      else if(level===2){ arp(523,[0,4,7,12],"triangle",0.16,0.07); }
+      else { arp(523,[0,4,7,12,16],"sawtooth",0.16,0.06); }
+    },
+    tick(){ tone(880,0.04,"square",0.06); },
+    alert(){ tone(180,0.5,"sawtooth",0.16); tone(140,0.6,"sawtooth",0.12,0.12); },
+    endGood(){ arp(523,[0,4,7,12,16,19],"triangle",0.18,0.12); },
+    endMid(){ arp(392,[0,3,7],"sine",0.16,0.14); },
+    endBad(){ tone(220,0.5,"sawtooth",0.16); tone(160,0.7,"sawtooth",0.14,0.18); tone(110,0.9,"sawtooth",0.12,0.4); }
+  };
+})();
 
 /* ---------------- HELPERS ---------------- */
 function show(id){
   ["screen-start","screen-scene","screen-ending"].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
+  const active=document.getElementById(id);
+  active.classList.remove("screen-in"); void active.offsetWidth; active.classList.add("screen-in");
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function updateMeter(){
-  document.getElementById("convVal").textContent = conv;
+  const el=document.getElementById("convVal");
+  el.textContent=conv;
+  el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
 }
 
 /* ---------------- FLOW ---------------- */
 function startGame(){
-  idx=0; conv=0; exp=0; log=[]; updateMeter();
+  Sound.resume(); Sound.click();
+  idx=0; conv=0; exp=0; log=[];
+  document.getElementById("convVal").textContent=0;
   document.getElementById("tinyExp").textContent="🔒 ?";
   renderScene();
   show("screen-scene");
 }
 
 function renderScene(){
-  const s = SCENARIOS[idx];
-  document.getElementById("stepTag").textContent = `STEP ${idx+1} / ${SCENARIOS.length}`;
-  document.getElementById("sceneImg").src = s.img;
-  document.getElementById("sceneImg").alt = s.title;
-  document.getElementById("mascotLine").textContent = s.line;
-  document.getElementById("situation").textContent = s.situation;
+  const s=SCENARIOS[idx];
+  document.getElementById("stepTag").textContent=`STEP ${idx+1} / ${SCENARIOS.length}`;
+  const sceneImg=document.getElementById("sceneImg");
+  sceneImg.src=s.img; sceneImg.alt=s.title;
+  document.getElementById("mascotLine").textContent=s.line;
+  document.getElementById("situation").textContent=s.situation;
 
-  const wrap = document.getElementById("choices");
+  const wrap=document.getElementById("choices");
   wrap.innerHTML="";
-  s.choices.forEach((ch)=>{
+  s.choices.forEach((ch,i)=>{
     const b=document.createElement("button");
     b.className="choice";
+    b.style.animationDelay=(0.06*i+0.1)+"s";
     b.innerHTML=`<img src="images/14 choice.png" alt="">${ch.t}`;
-    b.onclick=()=>pickChoice(ch, s);
+    b.onmouseenter=()=>Sound.click();
+    b.onclick=()=>{ Sound.select(); b.classList.add("picked"); setTimeout(()=>pickChoice(ch,s),140); };
     wrap.appendChild(b);
   });
 
-  // progress dots
-  const p=document.getElementById("progress");
-  p.innerHTML="";
+  const p=document.getElementById("progress"); p.innerHTML="";
   for(let i=0;i<SCENARIOS.length;i++){
     const d=document.createElement("span");
     d.className="dot"+(i<=idx?" on":"");
@@ -121,51 +168,44 @@ function renderScene(){
   }
 }
 
-function pickChoice(ch, s){
-  conv += ch.c;
-  exp  += ch.e;
+function pickChoice(ch,s){
+  conv+=ch.c; exp+=ch.e;
   log.push({scenario:s.title, situation:s.situation, choiceText:ch.t, c:ch.c, e:ch.e});
   updateMeter();
   showReward(ch.e, ch.c);
 }
 
-/* reward flashiness scales with exposure given */
-function showReward(eGain, cGain){
+function showReward(eGain,cGain){
   const box=document.getElementById("rewardBox");
-  const title=document.getElementById("rewardTitle");
-  const sub=document.getElementById("rewardSub");
-  const convp=document.getElementById("rewardConv");
   box.classList.toggle("flashy", eGain>=3);
 
-  let t, sb;
+  let t,sb;
   if(eGain===0){ t="👍 신중한 선택!"; sb="정보를 아꼈어요. 편리함은 조금 적지만 안전하죠."; }
   else if(eGain<=2){ t="✨ 기능 잠금 해제!"; sb="맞춤 기능이 열렸어요. 더 편리해졌네요!"; }
   else if(eGain<=4){ t="🎨 프리미엄 무료 개방!"; sb="화려한 AI 필터가 전부 열렸어요!"; }
   else { t="👑 VIP 등급 달성!"; sb="모든 기능 무제한! 친구들이 부러워하겠죠?"; }
 
-  title.textContent=t;
-  sub.textContent=sb;
-  convp.textContent = `편리함 +${cGain}`;
+  document.getElementById("rewardTitle").textContent=t;
+  document.getElementById("rewardSub").textContent=sb;
+  document.getElementById("rewardConv").textContent=`편리함 +${cGain}`;
 
   document.getElementById("rewardOverlay").classList.remove("hidden");
+  Sound.reward(Math.min(3, eGain));
+  if(eGain>=3) confetti();
+
   const nextBtn=document.getElementById("rewardNext");
-  nextBtn.textContent = (idx>=SCENARIOS.length-1) ? "결과 보기 →" : "다음 →";
-  nextBtn.onclick=closeReward;
+  nextBtn.textContent=(idx>=SCENARIOS.length-1)?"결과 보기 →":"다음 →";
+  nextBtn.onclick=()=>{ Sound.click(); closeReward(); };
 }
 
 function closeReward(){
   document.getElementById("rewardOverlay").classList.add("hidden");
   idx++;
-  if(idx<SCENARIOS.length){
-    renderScene();
-  }else{
-    renderEnding();
-  }
+  if(idx<SCENARIOS.length) renderScene();
+  else renderEnding();
 }
 
-function getEnding(){
-  return ENDINGS.find(e=> exp>=e.min && exp<=e.max) || ENDINGS[ENDINGS.length-1];
-}
+function getEnding(){ return ENDINGS.find(e=>exp>=e.min&&exp<=e.max)||ENDINGS[ENDINGS.length-1]; }
 
 function renderEnding(){
   const end=getEnding();
@@ -175,35 +215,68 @@ function renderEnding(){
   document.getElementById("tinyExp").textContent=`🔓 ${exp}`;
   show("screen-ending");
 
-  // animate exposure reveal
+  const news=document.querySelector(".news");
+  news.classList.remove("shake"); void news.offsetWidth; news.classList.add("shake");
+  Sound.alert();
+
   const fill=document.getElementById("expFill");
   const num=document.getElementById("expNum");
-  fill.style.width="0%";
-  num.textContent="0";
+  fill.style.width="0%"; num.textContent="0";
   setTimeout(()=>{
     fill.style.width=(exp/15*100)+"%";
+    if(exp===0){ afterReveal(end); return; }
     let cur=0;
-    const step=Math.max(1,Math.round(exp/20));
     const timer=setInterval(()=>{
-      cur+=step;
-      if(cur>=exp){cur=exp;clearInterval(timer);}
+      cur++;
+      if(cur>exp){ clearInterval(timer); afterReveal(end); return; }
       num.textContent=cur;
-    },70);
-  },400);
+      Sound.tick();
+    },140);
+  },700);
 
   buildReport(end);
 }
 
-function restart(){ startGame(); }
+function afterReveal(end){
+  if(end.mood==="good"){ Sound.endGood(); confetti(); }
+  else if(end.mood==="mid"){ Sound.endMid(); }
+  else { Sound.endBad(); }
+}
+
+function restart(){ Sound.click(); startGame(); }
+
+/* ---------------- CONFETTI ---------------- */
+function confetti(){
+  const colors=["#F6B93B","#E8504F","#7B5BE0","#3B7DED","#4FAE86"];
+  const layer=document.getElementById("confetti");
+  if(!layer) return;
+  for(let i=0;i<26;i++){
+    const p=document.createElement("span");
+    p.className="confetti-piece";
+    p.style.left=Math.random()*100+"%";
+    p.style.background=colors[i%colors.length];
+    p.style.animationDelay=(Math.random()*0.25)+"s";
+    p.style.transform=`rotate(${Math.random()*360}deg)`;
+    layer.appendChild(p);
+    setTimeout(()=>p.remove(),1600);
+  }
+}
+
+/* ---------------- MUTE TOGGLE ---------------- */
+function toggleMute(){
+  const m=!Sound.isMuted();
+  Sound.setMuted(m);
+  const btn=document.getElementById("muteBtn");
+  btn.textContent=m?"🔇":"🔊";
+  btn.setAttribute("aria-label", m?"소리 켜기":"소리 끄기");
+  if(!m){ Sound.resume(); Sound.click(); }
+}
 
 /* ---------------- REPORT (for PDF) ---------------- */
 function buildReport(end){
   const today=new Date();
   const dateStr=`${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일`;
-
-  // find highest-exposure choice for feedback
-  let worst=log[0];
-  log.forEach(l=>{ if(l.e>worst.e) worst=l; });
+  let worst=log[0]; log.forEach(l=>{ if(l.e>worst.e) worst=l; });
 
   let feedback;
   if(exp===0){
@@ -243,34 +316,29 @@ function buildReport(end){
 }
 
 async function downloadReport(){
+  Sound.click();
   const btn=document.getElementById("pdfBtn");
   const original=btn.textContent;
-  btn.textContent="리포트 만드는 중…";
-  btn.disabled=true;
+  btn.textContent="리포트 만드는 중…"; btn.disabled=true;
   try{
     const node=document.getElementById("report");
     const canvas=await html2canvas(node,{scale:2,backgroundColor:"#ffffff",useCORS:true});
     const imgData=canvas.toDataURL("image/png");
     const { jsPDF }=window.jspdf;
     const pdf=new jsPDF("p","mm","a4");
-    const pageW=210, pageH=297;
-    const imgW=pageW;
+    const pageW=210,pageH=297,imgW=pageW;
     const imgH=canvas.height*imgW/canvas.width;
-    let heightLeft=imgH, pos=0;
-    pdf.addImage(imgData,"PNG",0,pos,imgW,imgH);
-    heightLeft-=pageH;
-    while(heightLeft>0){
-      pos-=pageH;
-      pdf.addPage();
-      pdf.addImage(imgData,"PNG",0,pos,imgW,imgH);
-      heightLeft-=pageH;
-    }
+    let heightLeft=imgH,pos=0;
+    pdf.addImage(imgData,"PNG",0,pos,imgW,imgH); heightLeft-=pageH;
+    while(heightLeft>0){ pos-=pageH; pdf.addPage(); pdf.addImage(imgData,"PNG",0,pos,imgW,imgH); heightLeft-=pageH; }
     pdf.save("나의_개인정보_여정_리포트.pdf");
   }catch(err){
     alert("리포트를 만드는 중 문제가 생겼어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
     console.error(err);
   }finally{
-    btn.textContent=original;
-    btn.disabled=false;
+    btn.textContent=original; btn.disabled=false;
   }
 }
+
+/* resume audio on first interaction (browser autoplay policy) */
+window.addEventListener("pointerdown",()=>Sound.resume(),{once:true});
