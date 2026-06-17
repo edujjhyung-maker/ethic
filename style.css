@@ -203,3 +203,109 @@
   @media (prefers-reduced-motion:reduce){
     *{animation:none !important;transition:none !important;}
   }
+/* ===================================================
+   ENHANCEMENTS: animations, sound UI, confetti
+   =================================================== */
+
+/* mute button */
+.mute-btn{
+  flex:0 0 auto;border:none;cursor:pointer;font-size:18px;
+  width:42px;height:42px;border-radius:50%;background:var(--paper);
+  box-shadow:var(--shadow-sm);transition:transform .12s,filter .12s;
+}
+.mute-btn:hover{transform:scale(1.08);}
+.mute-btn:active{transform:scale(.92);}
+.mute-btn:focus-visible{outline:3px solid var(--blue);outline-offset:2px;}
+
+/* screen entrance */
+.screen-in{animation:screenIn .5s cubic-bezier(.2,.8,.2,1);}
+@keyframes screenIn{
+  from{opacity:0;transform:translateY(22px) scale(.985);}
+  to{opacity:1;transform:none;}
+}
+
+/* convenience number bump */
+.meter .val.bump{animation:bump .45s cubic-bezier(.2,1.5,.4,1);}
+@keyframes bump{
+  0%{transform:scale(1);}
+  40%{transform:scale(1.5);color:#FFD460;}
+  100%{transform:scale(1);}
+}
+
+/* choice entrance + hover lift + pick flash */
+.choice{opacity:0;animation:choiceIn .4s ease forwards;}
+@keyframes choiceIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.choice:hover{transform:translateY(-3px) scale(1.01);box-shadow:var(--shadow-sm);}
+.choice.picked{
+  border-color:var(--purple);background:#fff;
+  animation:pick .25s ease;
+}
+@keyframes pick{
+  0%{transform:scale(1);}
+  50%{transform:scale(.97);background:#EFE9FD;}
+  100%{transform:scale(1);}
+}
+
+/* mascot gentle bob */
+.mascot-line img{animation:bob 2.6s ease-in-out infinite;}
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+
+/* scene image subtle float-in */
+.scene-img{animation:floatIn .55s cubic-bezier(.2,.8,.2,1);}
+@keyframes floatIn{from{opacity:0;transform:scale(1.03);}to{opacity:1;transform:none;}}
+
+/* brand mascot tiny idle */
+.brand img{animation:bob 3.2s ease-in-out infinite;}
+
+/* reward popup: image pops + slight wobble when flashy */
+.reward img{animation:rewardPop .5s cubic-bezier(.2,1.4,.4,1);}
+@keyframes rewardPop{0%{transform:scale(.4) rotate(-8deg);opacity:0;}100%{transform:scale(1) rotate(0);opacity:1;}}
+.reward.flashy{animation:wobble .6s ease;}
+@keyframes wobble{0%,100%{transform:rotate(0);}25%{transform:rotate(-1.5deg);}75%{transform:rotate(1.5deg);}}
+
+/* news shake on ending */
+.news.shake{animation:shake .6s ease;}
+@keyframes shake{
+  0%,100%{transform:translateX(0);}
+  15%{transform:translateX(-6px);}
+  30%{transform:translateX(5px);}
+  45%{transform:translateX(-4px);}
+  60%{transform:translateX(3px);}
+  75%{transform:translateX(-2px);}
+}
+
+/* exposure number pulse */
+.exp-num #expNum{display:inline-block;animation:expPulse 1.4s ease-in-out infinite;}
+@keyframes expPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+
+/* ending image dramatic entrance */
+.ending-img{animation:endingIn .7s cubic-bezier(.2,.8,.2,1);}
+@keyframes endingIn{from{opacity:0;transform:translateY(24px) scale(.96);}to{opacity:1;transform:none;}}
+
+/* primary button shimmer on hover */
+.btn-primary{position:relative;overflow:hidden;}
+.btn-primary::after{
+  content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;
+  background:linear-gradient(120deg,transparent,rgba(255,255,255,.45),transparent);
+  transform:skewX(-20deg);transition:left .6s ease;
+}
+.btn-primary:hover::after{left:130%;}
+
+/* confetti */
+.confetti-layer{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden;}
+.confetti-piece{
+  position:absolute;top:-16px;width:11px;height:15px;border-radius:2px;
+  animation:fall 1.5s ease-in forwards;
+}
+@keyframes fall{
+  0%{opacity:1;transform:translateY(0) rotate(0);}
+  100%{opacity:0;transform:translateY(105vh) rotate(540deg);}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .choice,.scene-img,.mascot-line img,.brand img,.reward img,
+  .exp-num #expNum,.ending-img,.screen-in,.news.shake,.meter .val.bump{
+    animation:none !important;
+  }
+  .confetti-layer{display:none !important;}
+}
