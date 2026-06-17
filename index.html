@@ -5,17 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>공짜로 다 준다고요? — 개인정보 여정</title>
 
-<!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
 
-<!-- PDF libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<!-- Styles -->
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -29,16 +26,14 @@
     </div>
     <div class="meter" id="meter">
       <img src="images/11 star.png" alt="편리함" />
-      <div>
-        <div class="label">편리함</div>
-      </div>
+      <div><div class="label">편리함</div></div>
       <span class="val" id="convVal">0</span>
       <span class="tiny-exp" id="tinyExp" title="내 정보 노출도">🔒 ?</span>
     </div>
     <button class="mute-btn" id="muteBtn" onclick="toggleMute()" aria-label="소리 끄기">🔊</button>
   </div>
 
-  <!-- ===== START SCREEN ===== -->
+  <!-- ===== START ===== -->
   <section id="screen-start">
     <div class="hero">
       <span class="badge">AI 윤리 게임</span>
@@ -49,30 +44,29 @@
       <div class="sub">— 나의 개인정보 여정 —</div>
     </div>
     <div class="intro-text">
-      인기 AI 사진 앱 <b>‘AllMy’</b>가 나타났어요. 정보를 많이 줄수록 더 멋진 기능이 열리고
-      <b>편리함</b>이 쌓이죠. 그런데… 그 편리함의 진짜 가격은 게임이 끝날 때 드러납니다.
-      네 번의 선택, 당신은 무엇을 내어줄 건가요?
+      인기 AI 사진 앱 <b>‘AllMy’</b>가 나타났어요. 당신의 선택에 따라 이야기가 <b>갈라지고</b>,
+      정보를 내어줄수록 <b>편리함</b>이 쌓이죠. 그런데… 그 편리함의 진짜 가격은 이야기 끝에 드러납니다.
     </div>
     <button class="btn btn-primary mt" onclick="startGame()">시작하기</button>
     <div class="footnote">선택에 정답은 없어요. 끝까지 해보고, 마지막에 받은 리포트로 함께 이야기 나눠요.</div>
   </section>
 
-  <!-- ===== SCENARIO SCREEN ===== -->
-  <section id="screen-scene" class="hidden">
-    <div class="card">
-      <span class="step-tag" id="stepTag">STEP 1 / 4</span>
-      <img class="scene-img" id="sceneImg" src="" alt="" />
-      <div class="mascot-line">
-        <img id="sceneMascot" src="images/4 Allmy.png" alt="AllMy" />
-        <div class="bubble" id="mascotLine"></div>
-      </div>
-      <p class="situation" id="situation"></p>
-      <div class="choices" id="choices"></div>
+  <!-- ===== VISUAL NOVEL ===== -->
+  <section id="screen-vn" class="hidden">
+    <span class="step-tag floating" id="stepTag">STEP 1</span>
+    <div class="vn-bg" id="vnBg">
+      <img class="char char-left" id="charLeft" src="" alt="" />
+      <img class="char char-right" id="charRight" src="" alt="" />
     </div>
-    <div class="progress" id="progress"></div>
+    <div class="vn-box">
+      <div class="speaker" id="speakerName">AllMy</div>
+      <div class="dialogue" id="dialogue"></div>
+      <div class="next-hint hidden" id="nextHint">▼</div>
+      <div class="vn-choices hidden" id="vnChoices"></div>
+    </div>
   </section>
 
-  <!-- ===== ENDING SCREEN ===== -->
+  <!-- ===== ENDING ===== -->
   <section id="screen-ending" class="hidden">
     <div class="card">
       <div class="news">
@@ -93,29 +87,23 @@
     </div>
   </section>
 
-  <div class="footnote">AI 윤리 교육 게임 · 개인정보 편 — 만든이의 수업에 자유롭게 활용하세요.</div>
+  <div class="footnote">AI 윤리 교육 게임 · 개인정보 편 — 수업에 자유롭게 활용하세요.</div>
 </div>
 
-<!-- reward popup target -->
-<div id="rewardOverlay" class="overlay hidden">
-  <div class="reward" id="rewardBox">
-    <img src="images/13 reward.png" alt="보상" id="rewardImg" />
-    <div class="rtitle" id="rewardTitle"></div>
-    <div class="rsub" id="rewardSub"></div>
-    <div class="conv-pop" id="rewardConv"></div>
-    <button class="btn btn-primary" id="rewardNext">다음 →</button>
+<!-- result cut overlay -->
+<div id="resultOverlay" class="overlay hidden">
+  <div class="result" id="resultBox">
+    <img src="images/4 Allmy.png" alt="" id="resultImg" />
+    <div class="rhead" id="resultHead"></div>
+    <div class="rtext" id="resultText"></div>
+    <div class="conv-pop" id="resultConv"></div>
+    <button class="btn btn-primary" id="resultNext">다음 →</button>
   </div>
 </div>
 
-<!-- hidden report for PDF -->
-<div class="report-wrap" aria-hidden="true">
-  <div id="report"></div>
-</div>
-
-<!-- confetti layer -->
 <div id="confetti" class="confetti-layer" aria-hidden="true"></div>
+<div class="report-wrap" aria-hidden="true"><div id="report"></div></div>
 
-<!-- Game logic -->
 <script src="script.js"></script>
 </body>
 </html>
