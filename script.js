@@ -152,11 +152,8 @@ function renderNode(){
   const n=NODES[current];
   step++;
   document.getElementById("stepTag").textContent = "STEP "+step;
-  // scene + characters
+  // scene image (single full illustration, no overlay characters)
   const sc=document.getElementById("vnBg"); sc.style.backgroundImage=`url('${n.bg}')`;
-  const L=document.getElementById("charLeft"), R=document.getElementById("charRight");
-  L.src=n.left||""; L.style.visibility=n.left?"visible":"hidden";
-  R.src=n.right||""; R.style.visibility=n.right?"visible":"hidden";
   document.getElementById("speakerName").textContent = (n.speaker==="mascot")?"AllMy":"나";
   // hide choices until text finishes
   const cw=document.getElementById("vnChoices"); cw.innerHTML=""; cw.classList.add("hidden");
