@@ -2,7 +2,7 @@
 const SCENARIOS = [
   {
     title:"가입의 순간",
-    img:"images/6_scenario1.png",
+    img:"images/6 scenario1.png",
     line:"반가워! 가입만 하면 멋진 사진을 만들어 줄게. 어디까지 알려줄래?",
     situation:"인기 AI 사진 앱 ‘AllMy’에 가입하려고 해요. 어떤 정보까지 입력할까요?",
     choices:[
@@ -14,7 +14,7 @@ const SCENARIOS = [
   },
   {
     title:"권한 요청",
-    img:"images/7_scenario2.png",
+    img:"images/7 scenario2.png",
     line:"사진이랑 마이크, 위치도 열어주면 결과가 훨씬 멋져져! 어떻게 할래?",
     situation:"앱이 사진첩·마이크·위치 접근을 추가로 요구해요. 더 멋진 결과를 준다고 하네요.",
     choices:[
@@ -25,7 +25,7 @@ const SCENARIOS = [
   },
   {
     title:"친구의 부탁",
-    img:"images/8_scenario3.png",
+    img:"images/8 scenario3.png",
     line:"친구를 초대하고 단체사진을 올리면… 유료 기능을 평생 무료로 줄게! 👑",
     situation:"“친구를 초대하고 단체사진을 올리면 평생 무료!” 솔깃한 제안이 왔어요.",
     choices:[
@@ -36,7 +36,7 @@ const SCENARIOS = [
   },
   {
     title:"너무 똑똑한 추천",
-    img:"images/9_scenario4.png",
+    img:"images/9 scenario4.png",
     line:"어제 검색한 그 신발 어때? 네 취향 내가 제일 잘 알지~ 😉",
     situation:"앱이 내가 말한 적 없는 것까지 정확히 추천해요. 편한데… 어딘가 이상하죠.",
     choices:[
@@ -51,19 +51,19 @@ const ENDINGS = [
   {
     min:0, max:4,
     name:"현명한 디지털 시민",
-    img:"images/15_ending1.png",
+    img:"images/15 ending1.png",
     desc:"편리함은 조금 적었지만, 내 정보는 거의 새어나가지 않았어요. 뉴스 속 피해자 명단에 내 이름은 없습니다. 무엇을 내어줄지 스스로 판단한 당신은, 이미 현명한 디지털 시민이에요."
   },
   {
     min:5, max:9,
     name:"아슬아슬했던 사용자",
-    img:"images/16_ending2.png",
+    img:"images/16 ending2.png",
     desc:"편리하게 잘 썼지만, 전화번호와 위치 기록이 광고업체로 넘어가 스팸과 표적 광고가 쏟아집니다. 큰 피해는 면했지만 찜찜한 결말이에요. 다음엔 ‘이 정보를 꼭 줘야 할까?’ 한 번만 더 멈춰볼까요?"
   },
   {
     min:10, max:99,
     name:"편리함의 대가",
-    img:"images/17_ending3.png",
+    img:"images/17 ending3.png",
     desc:"가장 화려하게 즐겼지만, 사진·연락처·위치, 친구들 정보까지 모두 팔렸어요. 사칭 계정과 딥페이크 도용까지 등장합니다. 그 많던 ✨편리함은, 사실 내 정보의 가격이었던 거예요. 한 번 넘긴 정보는 되돌리기 어렵다는 걸 기억해요."
   }
 ];
@@ -106,7 +106,7 @@ function renderScene(){
   s.choices.forEach((ch)=>{
     const b=document.createElement("button");
     b.className="choice";
-    b.innerHTML=`<img src="images/14_choice.png" alt="">${ch.t}`;
+    b.innerHTML=`<img src="images/14 choice.png" alt="">${ch.t}`;
     b.onclick=()=>pickChoice(ch, s);
     wrap.appendChild(b);
   });
@@ -221,7 +221,7 @@ function buildReport(end){
 
   document.getElementById("report").innerHTML=`
     <div class="r-head">
-      <img src="images/4_Allmy.png" alt="">
+      <img src="images/4 Allmy.png" alt="">
       <h2>나의 개인정보 여정 리포트</h2>
     </div>
     <div class="r-meta">
